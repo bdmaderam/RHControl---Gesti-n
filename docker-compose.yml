@@ -25,7 +25,7 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql+psycopg://rhcontrol:rhcontrol@db:5432/rhcontrol
-      JWT_SECRET: clave-local-rhcontrol-cambiar-en-produccion
+      JWT_SECRET: ${JWT_SECRET:-clave-local-rhcontrol-cambiar-en-produccion}
       CORS_ORIGINS: http://localhost:3000,http://localhost
     ports:
       - "8000:8000"
