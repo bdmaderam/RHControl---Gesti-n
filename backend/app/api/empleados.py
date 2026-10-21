@@ -4,8 +4,9 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..models import Empleado
 from ..schemas.empleados import EmpleadoCreate, EmpleadoOut, EmpleadoUpdate
+from ..services.auth import get_current_user
 
-router = APIRouter(prefix="/api/empleados", tags=["Empleados"])
+router = APIRouter(prefix="/api/empleados", tags=["Empleados"], dependencies=[Depends(get_current_user)])
 
 def get_empleado(db, empleado_id):
     empleado = db.get(Empleado, empleado_id)
