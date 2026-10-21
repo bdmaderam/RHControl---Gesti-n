@@ -1,0 +1,57 @@
+name: Project Automation
+on:
+  issues:
+    types: [opened, assigned, closed]
+  pull_request:
+    types: [opened, reopened, ready_for_review, closed]
+
+env:
+  OWNER: bdmaderam
+  PROJECT_NUMBER: 9
+
+jobs:
+  move-card:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Decidir issue y columna destino
+        id: target
+        env:
+          EVENT: ${{ github.event_name }}
+          ACTION: ${{ github.event.action }}
+          MERGED: ${{ github.event.pull_request.merged }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          STATUS=""; NUM=""
+          if [ "$EVENT" = "issues" ]; then
+            NUM="$ISSUE_NUMBER"
+            case "$ACTION" in
+              opened)   STATUS="Backlog" ;;
+              assigned) STATUS="In Progress" ;;
+              closed)   STATUS="Done" ;;
+            esac
+          else
+            NUM=$(echo "$PR_BODY" | grep -oiE '(close[sd]?|fix(es|ed)?|resolve[sd]?) #[0-9]+' | head -1 | grep -oE '[0-9]+' || true)
+            if [ "$ACTION" = "closed" ]; then
+              if [ "$MERGED" = "true" ]; then STATUS="Done"; fi
+            else
+              STATUS="Review"
+            fi
+          fi
+          echo "num=$NUM" >> "$GITHUB_OUTPUT"
+          echo "status=$STATUS" >> "$GITHUB_OUTPUT"
+
+      - name: Mover la card en el Project
+        if: steps.target.outputs.num != '' && steps.target.outputs.status != ''
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+          NUM: ${{ steps.target.outputs.num }}
+          STATUS: ${{ steps.target.outputs.status }}
+          REPO: ${{ github.repository }}
+        run: |
+          PROJECT_ID=$(gh project view "$PROJECT_NUMBER" --owner "$OWNER" --format json --jq .id)
+          ITEM_ID=$(gh project item-add "$PROJECT_NUMBER" --owner "$OWNER" --url "https://github.com/$REPO/issues/$NUM" --format json --jq .id)
+          FIELD=$(gh project field-list "$PROJECT_NUMBER" --owner "$OWNER" --format json --jq '.fields[] | select(.name=="Status")')
+          FIELD_ID=$(echo "$FIELD" | jq -r .id)
+          OPTION_ID=$(echo "$FIELD" | jq -r --arg s "$STATUS" '.options[] | select(.name==$s) | .id')
+          gh project item-edit --id "$ITEM_ID" --project-id "$PROJECT_ID" --field-id "$FIELD_ID" --single-select-option-id "$OPTION_ID"
