@@ -49,9 +49,28 @@ jobs:
           STATUS: ${{ steps.target.outputs.status }}
           REPO: ${{ github.repository }}
         run: |
-          PROJECT_ID=$(gh project view "$PROJECT_NUMBER" --owner "$OWNER" --format json --jq .id)
-          ITEM_ID=$(gh project item-add "$PROJECT_NUMBER" --owner "$OWNER" --url "https://github.com/$REPO/issues/$NUM" --format json --jq .id)
-          FIELD=$(gh project field-list "$PROJECT_NUMBER" --owner "$OWNER" --format json --jq '.fields[] | select(.name=="Status")')
-          FIELD_ID=$(echo "$FIELD" | jq -r .id)
-          OPTION_ID=$(echo "$FIELD" | jq -r --arg s "$STATUS" '.options[] | select(.name==$s) | .id')
-          gh project item-edit --id "$ITEM_ID" --project-id "$PROJECT_ID" --field-id "$FIELD_ID" --single-select-option-id "$OPTION_ID"
+          ISSUE_ID=$(gh api "repos/$REPO/issues/$NUM" --jq .node_id)
+          DATA=$(gh api graphql -f owner="$OWNER" -F num="$PROJECT_NUMBER" -f query='
+            query($owner: String!, $num: Int!) {
+              user(login: $owner) {
+                projectV2(number: $num) {
+                  id
+                  fields(first: 50) {
+                    nodes {
+                      ... on ProjectV2SingleSelectField { id name options { id name } }
+                    }
+                  }
+                }
+              }
+            }')
+          PROJECT_ID=$(echo "$DATA" | jq -r '.data.user.projectV2.id')
+          FIELD_ID=$(echo "$DATA" | jq -r '.data.user.projectV2.fields.nodes[] | select(.name=="Status") | .id')
+          OPTION_ID=$(echo "$DATA" | jq -r --arg s "$STATUS" '.data.user.projectV2.fields.nodes[] | select(.name=="Status") | .options[] | select(.name==$s) | .id')
+          ITEM_ID=$(gh api graphql -f project="$PROJECT_ID" -f content="$ISSUE_ID" -f query='
+            mutation($project: ID!, $content: ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $content}) { item { id } }
+            }' --jq '.data.addProjectV2ItemById.item.id')
+          gh api graphql -f project="$PROJECT_ID" -f item="$ITEM_ID" -f field="$FIELD_ID" -f option="$OPTION_ID" -f query='
+            mutation($project: ID!, $item: ID!, $field: ID!, $option: String!) {
+              updateProjectV2ItemFieldValue(input: {projectId: $project, itemId: $item, fieldId: $field, value: {singleSelectOptionId: $option}}) { projectV2Item { id } }
+            }'
