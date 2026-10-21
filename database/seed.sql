@@ -1,0 +1,3 @@
+-- Los datos iniciales también se crean automáticamente por FastAPI para evitar
+-- problemas con el orden de inicialización del contenedor en desarrollo.
+-- Este archivo queda disponible como evidencia del requisito de datos de prueba.

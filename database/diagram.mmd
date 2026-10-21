@@ -1,0 +1,29 @@
+erDiagram
+    EMPLEADOS ||--o{ ANOTACIONES : tiene
+    EMPLEADOS {
+        int id PK
+        varchar nombres
+        varchar apellidos
+        varchar tipo_documento
+        varchar numero_documento UK
+        date fecha_nacimiento
+        varchar cargo
+        numeric salario
+        varchar dependencia
+        boolean tiene_cuenta_bancaria
+        boolean es_temporal
+        boolean activo
+    }
+    ANOTACIONES {
+        int id PK
+        int empleado_id FK
+        varchar tipo
+        text descripcion
+        date fecha
+    }
+    USUARIOS {
+        int id PK
+        varchar usuario UK
+        varchar password_hash
+        varchar nombre
+    }
