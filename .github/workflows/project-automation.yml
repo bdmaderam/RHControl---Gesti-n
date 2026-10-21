@@ -1,0 +1,76 @@
+name: Project Automation
+on:
+  issues:
+    types: [opened, assigned, closed]
+  pull_request:
+    types: [opened, reopened, ready_for_review, closed]
+
+env:
+  OWNER: bdmaderam
+  PROJECT_NUMBER: 9
+
+jobs:
+  move-card:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Decidir issue y columna destino
+        id: target
+        env:
+          EVENT: ${{ github.event_name }}
+          ACTION: ${{ github.event.action }}
+          MERGED: ${{ github.event.pull_request.merged }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          STATUS=""; NUM=""
+          if [ "$EVENT" = "issues" ]; then
+            NUM="$ISSUE_NUMBER"
+            case "$ACTION" in
+              opened)   STATUS="Backlog" ;;
+              assigned) STATUS="In Progress" ;;
+              closed)   STATUS="Done" ;;
+            esac
+          else
+            NUM=$(echo "$PR_BODY" | grep -oiE '(close[sd]?|fix(es|ed)?|resolve[sd]?) #[0-9]+' | head -1 | grep -oE '[0-9]+' || true)
+            if [ "$ACTION" = "closed" ]; then
+              if [ "$MERGED" = "true" ]; then STATUS="Done"; fi
+            else
+              STATUS="Review"
+            fi
+          fi
+          echo "num=$NUM" >> "$GITHUB_OUTPUT"
+          echo "status=$STATUS" >> "$GITHUB_OUTPUT"
+
+      - name: Mover la card en el Project
+        if: steps.target.outputs.num != '' && steps.target.outputs.status != ''
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+          NUM: ${{ steps.target.outputs.num }}
+          STATUS: ${{ steps.target.outputs.status }}
+          REPO: ${{ github.repository }}
+        run: |
+          ISSUE_ID=$(gh api "repos/$REPO/issues/$NUM" --jq .node_id)
+          DATA=$(gh api graphql -f owner="$OWNER" -F num="$PROJECT_NUMBER" -f query='
+            query($owner: String!, $num: Int!) {
+              user(login: $owner) {
+                projectV2(number: $num) {
+                  id
+                  fields(first: 50) {
+                    nodes {
+                      ... on ProjectV2SingleSelectField { id name options { id name } }
+                    }
+                  }
+                }
+              }
+            }')
+          PROJECT_ID=$(echo "$DATA" | jq -r '.data.user.projectV2.id')
+          FIELD_ID=$(echo "$DATA" | jq -r '.data.user.projectV2.fields.nodes[] | select(.name=="Status") | .id')
+          OPTION_ID=$(echo "$DATA" | jq -r --arg s "$STATUS" '.data.user.projectV2.fields.nodes[] | select(.name=="Status") | .options[] | select(.name==$s) | .id')
+          ITEM_ID=$(gh api graphql -f project="$PROJECT_ID" -f content="$ISSUE_ID" -f query='
+            mutation($project: ID!, $content: ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $content}) { item { id } }
+            }' --jq '.data.addProjectV2ItemById.item.id')
+          gh api graphql -f project="$PROJECT_ID" -f item="$ITEM_ID" -f field="$FIELD_ID" -f option="$OPTION_ID" -f query='
+            mutation($project: ID!, $item: ID!, $field: ID!, $option: String!) {
+              updateProjectV2ItemFieldValue(input: {projectId: $project, itemId: $item, fieldId: $field, value: {singleSelectOptionId: $option}}) { projectV2Item { id } }
+            }'
