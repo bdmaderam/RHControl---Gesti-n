@@ -3,8 +3,9 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..models import Anotacion, Empleado
 from ..schemas.anotaciones import AnotacionCreate, AnotacionOut, AnotacionUpdate
+from ..services.auth import get_current_user
 
-router = APIRouter(prefix="/api/anotaciones", tags=["Anotaciones"])
+router = APIRouter(prefix="/api/anotaciones", tags=["Anotaciones"], dependencies=[Depends(get_current_user)])
 
 def get_anotacion(db, anotacion_id):
     obj=db.get(Anotacion, anotacion_id)
