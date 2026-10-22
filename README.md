@@ -1,3 +1,5 @@
+![CI](https://github.com/bdmaderam/RHControl---Gesti-n/actions/workflows/ci.yml/badge.svg)
+
 # RHControl 
 # RHControl
 
