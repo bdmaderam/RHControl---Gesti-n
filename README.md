@@ -1,280 +1,240 @@
-![CI](https://github.com/bdmaderam/RHControl---Gesti-n/actions/workflows/ci.yml/badge.svg)
-
-# RHControl 
 # RHControl
 
-![Node.js](https://img.shields.io/badge/Node.js-Express-339933?style=flat-square&logo=node.js&logoColor=white)
-![React](https://img.shields.io/badge/React-19.1.0-61DAFB?style=flat-square&logo=react&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-4169E1?style=flat-square&logo=postgresql&logoColor=white)
+![CI](https://github.com/bdmaderam/RHControl---Gesti-n/actions/workflows/ci.yml/badge.svg)
+![Deploy](https://github.com/bdmaderam/RHControl---Gesti-n/actions/workflows/deploy.yml/badge.svg)
+![FastAPI](https://img.shields.io/badge/FastAPI-Python%203.12-009688?style=flat-square&logo=fastapi&logoColor=white)
+![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-4.1.7-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
-![License](https://img.shields.io/badge/Licencia-ISC-lightgrey?style=flat-square)
+![Google Cloud](https://img.shields.io/badge/Google%20Cloud-Cloud%20Run-4285F4?style=flat-square&logo=googlecloud&logoColor=white)
 
-**RHControl** es una aplicación web para la gestión sencilla y organizada de recursos humanos. Permite administrar el registro de empleados, consultar su información laboral, llevar anotaciones (reconocimientos, observaciones, etc.) y generar reportes con métricas clave, todo desde un panel centralizado.
+**RHControl** es una aplicación web para la gestión de recursos humanos: registro de empleados, consulta de su información laboral, anotaciones (reconocimientos, observaciones, llamados de atención) y reportes con exportación a CSV. Es el proyecto sobre el que se desarrolla el **Proyecto 2 – Gestión colaborativa con GitHub Projects** de la materia *Desarrollo de Aplicaciones en la Nube*.
 
----
+## Aplicación en producción
+
+| Servicio | URL |
+|---|---|
+| Frontend | https://rhcontrol-frontend-3cugxgrrsa-uc.a.run.app |
+| API (backend) | https://rhcontrol-backend-3cugxgrrsa-uc.a.run.app |
+| Documentación interactiva (Swagger) | https://rhcontrol-backend-3cugxgrrsa-uc.a.run.app/docs |
+
+Usuario de demostración: `admin` / `admin123` (se crea al iniciar la API por primera vez; debe cambiarse en un uso real).
+
+> Los servicios de Cloud Run se escalan a cero cuando no hay tráfico, por lo que la primera petición después de un rato puede tardar unos segundos.
 
 ## Tabla de contenido
 
-- [Capturas de pantalla](#capturas-de-pantalla)
-- [Características principales](#características-principales)
-- [Tecnologías utilizadas](#tecnologías-utilizadas)
-- [Estructura del proyecto](#estructura-del-proyecto)
-- [Requisitos previos](#requisitos-previos)
-- [Instalación y configuración](#instalación-y-configuración)
+- [Características](#características)
+- [Arquitectura](#arquitectura)
+- [Tecnologías](#tecnologías)
+- [Estructura del repositorio](#estructura-del-repositorio)
+- [Ejecución local con Docker](#ejecución-local-con-docker)
+- [Ejecución local sin Docker](#ejecución-local-sin-docker)
 - [Variables de entorno](#variables-de-entorno)
-- [Uso con Docker](#uso-con-docker)
-- [Scripts disponibles](#scripts-disponibles)
-- [Endpoints principales de la API](#endpoints-principales-de-la-api)
 - [Pruebas](#pruebas)
+- [Integración y despliegue continuo](#integración-y-despliegue-continuo)
+- [Despliegue en Google Cloud](#despliegue-en-google-cloud)
+- [Flujo de trabajo del equipo](#flujo-de-trabajo-del-equipo)
+- [Documentación adicional](#documentación-adicional)
 - [Autores](#autores)
 - [Licencia](#licencia)
 
----
+## Características
 
-## Capturas de pantalla
+- Inicio de sesión con usuario y contraseña; la API devuelve un token JWT (Bearer) que el frontend envía en cada petición. Si el token vence o es inválido, la sesión se cierra automáticamente (401).
+- CRUD completo de empleados con validaciones (tipo de documento CC/CE/PA, documento único, salario no negativo).
+- Búsqueda de empleados por nombre, número de documento y estado (activo/inactivo).
+- Anotaciones por empleado: crear, consultar, editar y eliminar.
+- Panel de control con indicadores generales y módulo de reportes con exportación a CSV.
+- Estados de carga, mensajes de error claros y botones deshabilitados mientras se guarda.
+- Pruebas automatizadas del backend y del frontend ejecutadas en cada Pull Request.
 
-### Inicio de sesión
-Acceso protegido por usuario y contraseña.
-
-![Inicio de sesión](docs/screenshots/login.png)
-
-### Panel de control
-Resumen general del sistema: total de empleados, empleados activos y anotaciones registradas, además de accesos rápidos a las funciones principales.
-
-![Panel de control](docs/screenshots/panel.png)
-
-### Agregar nuevo empleado
-Formulario de registro con validación de campos obligatorios (nombres, apellidos, tipo y número de documento, cargo) e información complementaria (salario, dependencia, cuenta bancaria, tipo de ingreso, estado).
-
-![Agregar nuevo empleado](docs/screenshots/agregar-empleado.png)
-
-### Listado de empleados
-Consulta con búsqueda por nombre, por número de documento y filtro por estado, con acciones para ver, editar o eliminar cada registro.
-
-![Listado de empleados](docs/screenshots/listado-empleados.png)
-
-### Detalle del empleado
-Ficha individual con la información laboral del empleado y sus anotaciones asociadas (con opción de agregar, editar o eliminar).
-
-![Detalle del empleado](docs/screenshots/detalle-empleado.png)
-
-### Reporte de empleados
-Resumen generado directamente desde PostgreSQL mediante la API REST, con opción de exportar la información a CSV.
-
-![Reporte de empleados](docs/screenshots/reportes.png)
-
----
-
-## Características principales
-
-- Autenticación de usuarios mediante usuario y contraseña.
-- Panel de control con indicadores generales (empleados totales, activos y anotaciones).
-- Gestión completa (CRUD) de empleados: creación, consulta, edición y eliminación.
-- Búsqueda y filtrado de empleados por nombre, número de documento y estado.
-- Ficha de detalle por empleado con su información laboral (cargo, dependencia, salario, estado, tipo de ingreso, cuenta bancaria).
-- Sistema de anotaciones por empleado, con edición y eliminación individual.
-- Módulo de reportes con métricas generales y exportación de datos a CSV.
-- Persistencia de datos en PostgreSQL, consumida a través de una API REST.
-- Interfaz responsiva construida con React y Tailwind CSS.
-- Contenerización del proyecto con Docker y Docker Compose.
-
----
-
-## Tecnologías utilizadas
-
-### Backend
-
-| Tecnología | Uso |
-|---|---|
-| Node.js + Express | Servidor y API REST |
-| PostgreSQL | Base de datos relacional |
-| Arquitectura en capas | Controladores, servicios, modelos, middlewares, rutas y utilidades |
-| Docker | Contenerización del servicio |
-
-### Frontend
-
-| Tecnología | Versión | Uso |
-|---|---|---|
-| React | 19.1.0 | Librería principal de interfaz |
-| React DOM | 19.1.0 | Renderizado en el navegador |
-| React Router DOM | 7.6.0 | Enrutamiento entre vistas |
-| Chart.js / react-chartjs-2 | 4.4.9 / 5.3.0 | Visualización de datos en reportes |
-| Tailwind CSS | 4.1.7 | Estilos y diseño responsivo |
-| @heroicons/react | 2.2.0 | Iconografía |
-| Create React App (react-scripts) | 5.0.1 | Tooling de build y desarrollo |
-| Testing Library (dom, jest-dom, react, user-event) | — | Pruebas de componentes |
-
----
-
-## Estructura del proyecto
+## Arquitectura
 
 ```
-RHContol/
+                     ┌──────────────────────── Google Cloud ────────────────────────┐
+                     │                                                               │
+ Navegador ────────► │  Cloud Run: rhcontrol-frontend (nginx + React, puerto 80)     │
+     │               │                                                               │
+     └─ API REST ──► │  Cloud Run: rhcontrol-backend (FastAPI, puerto 8000)          │
+        (JWT)        │        │  secretos: DATABASE_URL, JWT_SECRET (Secret Manager) │
+                     │        ▼                                                      │
+                     │  Cloud SQL: PostgreSQL 16 (socket /cloudsql)                  │
+                     │                                                               │
+                     │  Artifact Registry: imágenes Docker del backend y frontend    │
+                     └───────────────────────────────────────────────────────────────┘
+                                         ▲
+   GitHub (production) ── GitHub Actions ┘  (build, push y deploy)
+```
+
+## Tecnologías
+
+| Capa | Tecnologías |
+|---|---|
+| Backend | Python 3.12, FastAPI, SQLAlchemy 2, Pydantic v2, PyJWT, psycopg 3, Uvicorn |
+| Base de datos | PostgreSQL 16 (Docker en local, Cloud SQL en producción) |
+| Frontend | React 18, React Router 6, Chart.js, Create React App (react-scripts 5) |
+| Pruebas | pytest + httpx (backend), Jest + Testing Library (frontend) |
+| Contenedores | Docker y Docker Compose; nginx para servir el frontend |
+| CI/CD | GitHub Actions |
+| Nube | Google Cloud: Cloud Run, Cloud SQL, Artifact Registry, Secret Manager |
+| Gestión | GitHub Projects (tablero Kanban), Issues, Pull Requests y rulesets |
+
+## Estructura del repositorio
+
+```
+.
+├── .github/
+│   ├── ISSUE_TEMPLATE/historia-de-usuario.md   # plantilla de historias de usuario
+│   ├── pull_request_template.md                # plantilla de Pull Request
+│   └── workflows/
+│       ├── project-automation.yml              # mueve las tarjetas del tablero
+│       ├── ci.yml                              # pruebas y build en cada PR
+│       └── deploy.yml                          # despliegue en Google Cloud
 ├── backend/
-│   ├── src/
-│   │   ├── configuracion/
-│   │   │   └── baseDeDatos.js         # Conexión a PostgreSQL
-│   │   ├── controladores/
-│   │   │   ├── anotacionControlador.js
-│   │   │   ├── autenticacionControlador.js
-│   │   │   └── empleadoControlador.js
-│   │   ├── middlewares/
-│   │   ├── modelos/
-│   │   ├── rutas/
-│   │   ├── servicios/
-│   │   └── utilidades/
-│   │       ├── manejoErrores.js
-│   │       ├── validaciones.js
-│   │       └── servidor.js            # Punto de entrada del servidor
-│   ├── .gitignore
-│   └── Dockerfile
+│   ├── app/
+│   │   ├── api/                # rutas: auth, empleados, anotaciones
+│   │   ├── core/config.py      # configuración por variables de entorno
+│   │   ├── models/             # modelos SQLAlchemy
+│   │   ├── schemas/            # esquemas Pydantic
+│   │   ├── services/auth.py    # hash de contraseñas y validación del JWT
+│   │   └── main.py             # aplicación FastAPI
+│   ├── tests/                  # pruebas con pytest
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   └── requirements-dev.txt
 ├── frontend/
-│   ├── public/
-│   └── src/                           # Componentes, páginas y consumo de la API
-├── docs/
-│   └── screenshots/                   # Capturas usadas en este README
+│   ├── src/                    # App.js, api.js y pruebas
+│   ├── Dockerfile              # build de React + nginx
+│   └── nginx.conf
+├── database/                   # schema.sql, seed.sql y diagrama
+├── docs/                       # API, métricas y retrospectiva
 ├── docker-compose.yml
-├── package.json
 └── README.md
 ```
 
----
+## Ejecución local con Docker
 
-## Requisitos previos
-
-- [Node.js](https://nodejs.org/) 18 o superior
-- npm
-- [PostgreSQL](https://www.postgresql.org/) 14 o superior (si no se usa Docker)
-- [Docker](https://www.docker.com/) y Docker Compose (opcional, recomendado)
-- Git
-
----
-
-## Instalación y configuración
-
-1. **Clonar el repositorio**
+Requisitos: Docker y Docker Compose.
 
 ```bash
-   git clone https://github.com/bdmaderam/RHContol.git
-   cd RHContol
+git clone https://github.com/bdmaderam/RHControl---Gesti-n.git
+cd RHControl---Gesti-n
+docker compose up --build -d
 ```
 
-2. **Configurar el backend**
+| Servicio | URL local |
+|---|---|
+| Frontend | http://localhost:3000 |
+| API | http://localhost:8000 |
+| Swagger | http://localhost:8000/docs |
+
+Usuario inicial: `admin` / `admin123`. Para detener todo: `docker compose down` (agrega `-v` para borrar también los datos).
+
+## Ejecución local sin Docker
+
+Requisitos: Python 3.12, Node.js 20 y un PostgreSQL 16 accesible.
 
 ```bash
-   cd backend
-   npm install
+# Backend
+cd backend
+python -m venv .venv && source .venv/bin/activate      # en Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+export DATABASE_URL="postgresql+psycopg://usuario:clave@localhost:5432/rhcontrol"
+export JWT_SECRET="una-clave-de-al-menos-16-caracteres"
+uvicorn app.main:app --reload --port 8000
+
+# Frontend (otra terminal)
+cd frontend
+npm install --legacy-peer-deps
+REACT_APP_API_URL=http://localhost:8000/api npm start
 ```
-
-   Crea un archivo `.env` dentro de `backend/` (ver [Variables de entorno](#variables-de-entorno)) y ajusta los datos de conexión a PostgreSQL en `src/configuracion/baseDeDatos.js` según corresponda.
-
-```bash
-   node src/utilidades/servidor.js
-   # o, si existe un script definido en backend/package.json:
-   npm run dev
-```
-
-3. **Configurar el frontend**
-
-```bash
-   cd ../frontend
-   npm install
-   npm start
-```
-
-   La aplicación quedará disponible por defecto en `http://localhost:3000`.
-
----
 
 ## Variables de entorno
 
-Ejemplo de archivo `.env` para el **backend** (ajusta los nombres exactos según tu configuración en `baseDeDatos.js`):
+Backend (ver `backend/.env.example`):
 
-```env
-PORT=4000
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=tu_password
-DB_NAME=rhcontrol
-JWT_SECRET=tu_clave_secreta
-```
-
-Ejemplo de archivo `.env` para el **frontend** (las variables de Create React App deben iniciar con `REACT_APP_`):
-
-```env
-REACT_APP_API_URL=http://localhost:4000/api
-```
-
-> **Nota:** los archivos `.env` no se versionan (están incluidos en `.gitignore`); cada persona del equipo debe crear el suyo localmente.
-
----
-
-## Uso con Docker
-
-El proyecto incluye un `docker-compose.yml` en la raíz para levantar los servicios de forma conjunta:
-
-```bash
-docker-compose up --build -d
-```
-
-Para detener los contenedores:
-
-```bash
-docker-compose down
-```
-
----
-
-## Scripts disponibles
-
-**Frontend** (`frontend/package.json`):
-
-| Script | Descripción |
+| Variable | Descripción |
 |---|---|
-| `npm start` | Ejecuta la aplicación en modo desarrollo |
-| `npm run build` | Genera el build de producción |
-| `npm test` | Ejecuta las pruebas con Testing Library |
-| `npm run eject` | Expone la configuración de Create React App |
+| `DATABASE_URL` | Cadena de conexión SQLAlchemy, con el driver `postgresql+psycopg://` |
+| `JWT_SECRET` | Clave para firmar los tokens (mínimo 16 caracteres) |
+| `CORS_ORIGINS` | Orígenes permitidos, separados por comas |
 
-**Backend:** revisa `backend/package.json` para los scripts configurados (por ejemplo, un script de desarrollo con recarga automática); el punto de entrada del servidor es `backend/src/utilidades/servidor.js`.
+Frontend (se fija al construir la imagen):
 
----
+| Variable | Descripción |
+|---|---|
+| `REACT_APP_API_URL` | URL base de la API, por ejemplo `http://localhost:8000/api` |
 
-## Endpoints principales de la API
-
-Ejemplo de las rutas expuestas para el recurso **empleados** (ajusta el prefijo `/api` según lo definido en `backend/src/rutas`):
-
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/api/empleados` | Obtiene todos los empleados |
-| `GET` | `/api/empleados/:id` | Obtiene un empleado por su ID |
-| `POST` | `/api/empleados` | Crea un nuevo empleado |
-| `PUT` | `/api/empleados/:id` | Actualiza un empleado existente |
-| `DELETE` | `/api/empleados/:id` | Elimina un empleado |
-
-El backend expone además módulos de **autenticación** (inicio de sesión) y **anotaciones** (registro de observaciones por empleado), implementados en `autenticacionControlador.js` y `anotacionControlador.js` respectivamente.
-
----
+Los archivos `.env` no se versionan. En producción los valores sensibles viven en Google Secret Manager y en GitHub Secrets, nunca en el repositorio.
 
 ## Pruebas
 
-El frontend utiliza la suite de **Testing Library** (`@testing-library/dom`, `jest-dom`, `react` y `user-event`) integrada con Create React App:
-
 ```bash
+# Backend: 12 pruebas (usan SQLite, no necesitan PostgreSQL)
+cd backend
+pip install -r requirements.txt -r requirements-dev.txt
+pytest
+
+# Frontend: 6 pruebas
 cd frontend
+npm ci --legacy-peer-deps
 npm test
 ```
 
----
+## Integración y despliegue continuo
+
+| Workflow | Cuándo corre | Qué hace |
+|---|---|---|
+| `project-automation.yml` | Cuando un Pull Request enlazado a un issue cambia de estado | Mueve la tarjeta del issue enlazado (`Closes #N`) a **Review** y luego a **Done** en GitHub Projects |
+| `ci.yml` | En cada Pull Request | Job `backend`: instala dependencias y ejecuta pytest. Job `frontend`: instala, ejecuta las pruebas y construye la aplicación |
+| `deploy.yml` | En cada push a `production` | Construye las imágenes, las sube a Artifact Registry, despliega el backend y luego el frontend en Cloud Run, y actualiza el CORS del backend con la URL del frontend |
+
+Los checks `backend` y `frontend` son obligatorios para fusionar: el ruleset de las ramas protegidas exige además un Pull Request con al menos una aprobación.
+
+## Despliegue en Google Cloud
+
+Recursos del proyecto `rhcontrol` (región `us-central1`):
+
+| Recurso | Nombre |
+|---|---|
+| Cloud Run | `rhcontrol-backend`, `rhcontrol-frontend` |
+| Cloud SQL (PostgreSQL 16, `db-f1-micro`) | `rhcontrol-db`, base `rhcontrol` |
+| Artifact Registry (Docker) | `rhcontrol` |
+| Secret Manager | `database-url`, `jwt-secret` |
+| Cuentas de servicio | `rhcontrol-run` (ejecuta la app), `github-deployer` (despliega desde GitHub Actions) |
+
+Secretos del repositorio en GitHub: `GCP_SA_KEY`, `GCP_PROJECT_ID`, `CLOUDSQL_CONNECTION` y `PROJECT_TOKEN`.
+
+Para desplegar una nueva versión basta con fusionar un Pull Request de `development` hacia `production`.
+
+Para detener los costos al terminar el proyecto:
+
+```bash
+gcloud run services delete rhcontrol-frontend rhcontrol-backend --region us-central1
+gcloud sql instances delete rhcontrol-db
+gcloud artifacts repositories delete rhcontrol --location us-central1
+```
+
+## Flujo de trabajo del equipo
+
+- **Tablero Kanban** en GitHub Projects con las columnas Backlog → Ready → In Progress → Review → Done, y los campos personalizados Sprint, Prioridad, Tipo y Estimación (puntos).
+- **Ramas:** `main` (base del repositorio), `production` (lo desplegado), `development` (integración) y `feature/sprintN-*` (una por historia).
+- **Pull Requests:** cada historia entra a `development` con un PR que referencia su issue (`Closes #N`), revisión cruzada y checks en verde. Los releases de `development` a `production` se hacen con PR y *merge commit*.
+- **Roles alternados:** quien abre el PR no es quien lo aprueba y lo fusiona; los releases alternan autor y revisor.
+- **Tres sprints:** 1) backend y base de datos, 2) frontend, 3) despliegue y documentación.
+
+## Documentación adicional
+
+- [Documentación de la API](docs/api-documentation.md)
+- [Métricas del proyecto](docs/metricas.md)
+- [Retrospectiva](docs/retrospectiva.md)
+- [Mapeo de requisitos](docs/requirements-mapping.md)
 
 ## Autores
 
-- **Daniel Suárez**
-- **Brayan Madera**
-
----
+- **Daniel Suárez** — [@Danielsuarez1-ops](https://github.com/Danielsuarez1-ops)
+- **Brayan Madera** — [@bdmaderam](https://github.com/bdmaderam)
 
 ## Licencia
 
