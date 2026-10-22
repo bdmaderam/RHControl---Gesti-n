@@ -26,6 +26,9 @@ def listar_por_empleado(empleado_id: int, db: Session = Depends(get_db)):
     get_empleado(db, empleado_id)
     return db.query(Anotacion).filter(Anotacion.empleado_id == empleado_id).order_by(Anotacion.fecha.desc()).all()
 
+@router.get("/{anotacion_id}", response_model=AnotacionOut)
+def obtener(anotacion_id: int, db: Session = Depends(get_db)):
+    return get_anotacion(db, anotacion_id)
 @router.post("/empleado/{empleado_id}", response_model=AnotacionOut, status_code=status.HTTP_201_CREATED)
 def crear(empleado_id: int, payload: AnotacionCreate, db: Session = Depends(get_db)):
     get_empleado(db, empleado_id)
