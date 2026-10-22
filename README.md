@@ -238,4 +238,4 @@ gcloud artifacts repositories delete rhcontrol --location us-central1
 
 ## Licencia
 
-Este proyecto se distribuye bajo la licencia **ISC**.
+Este proyecto se distribuye bajo la licencia **ISC** y es de uso academico.
