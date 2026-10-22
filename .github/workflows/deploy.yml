@@ -1,0 +1,57 @@
+name: Deploy to GCP
+
+on:
+  push:
+    branches: [production]
+
+env:
+  REGION: us-central1
+  REPO: rhcontrol
+
+jobs:
+  deploy-backend:
+    name: Desplegar backend (Cloud Run)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configurar Docker para Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Construir y publicar la imagen
+        run: |
+          IMAGE=${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO }}/backend:${{ github.sha }}
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+          docker build -t "$IMAGE" ./backend
+          docker push "$IMAGE"
+
+      - name: Desplegar en Cloud Run
+        run: |
+          gcloud run deploy rhcontrol-backend \
+            --image "$IMAGE" \
+            --region "${{ env.REGION }}" \
+            --project "${{ secrets.GCP_PROJECT_ID }}" \
+            --platform managed \
+            --port 8000 \
+            --service-account "rhcontrol-run@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com" \
+            --add-cloudsql-instances "${{ secrets.CLOUDSQL_CONNECTION }}" \
+            --set-secrets "DATABASE_URL=database-url:latest,JWT_SECRET=jwt-secret:latest" \
+            --update-env-vars "CORS_ORIGINS=${{ secrets.FRONTEND_URL || 'http://localhost:3000' }}" \
+            --allow-unauthenticated \
+            --min-instances 0 \
+            --max-instances 2 \
+            --memory 512Mi
+
+      - name: Mostrar URL y probar salud
+        run: |
+          URL=$(gcloud run services describe rhcontrol-backend --region "${{ env.REGION }}" --project "${{ secrets.GCP_PROJECT_ID }}" --format="value(status.url)")
+          echo "Backend: $URL"
+          curl --fail --retry 5 --retry-delay 5 "$URL/api/salud"
