@@ -35,6 +35,8 @@ jobs:
 
       - name: Desplegar en Cloud Run
         run: |
+          FRONT=$(gcloud run services describe rhcontrol-frontend --region "${{ env.REGION }}" --project "${{ secrets.GCP_PROJECT_ID }}" --format="value(status.url)" 2>/dev/null || true)
+          FRONT=${FRONT:-http://localhost:3000}
           gcloud run deploy rhcontrol-backend \
             --image "$IMAGE" \
             --region "${{ env.REGION }}" \
@@ -44,7 +46,7 @@ jobs:
             --service-account "rhcontrol-run@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com" \
             --add-cloudsql-instances "${{ secrets.CLOUDSQL_CONNECTION }}" \
             --set-secrets "DATABASE_URL=database-url:latest,JWT_SECRET=jwt-secret:latest" \
-            --update-env-vars "CORS_ORIGINS=${{ secrets.FRONTEND_URL || 'http://localhost:3000' }}" \
+            --update-env-vars "CORS_ORIGINS=$FRONT" \
             --allow-unauthenticated \
             --min-instances 0 \
             --max-instances 2 \
@@ -55,3 +57,51 @@ jobs:
           URL=$(gcloud run services describe rhcontrol-backend --region "${{ env.REGION }}" --project "${{ secrets.GCP_PROJECT_ID }}" --format="value(status.url)")
           echo "Backend: $URL"
           curl --fail --retry 5 --retry-delay 5 "$URL/api/salud"
+  deploy-frontend:
+    name: Desplegar frontend (Cloud Run)
+    needs: deploy-backend
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configurar Docker para Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Construir y publicar la imagen con la URL del backend
+        run: |
+          API=$(gcloud run services describe rhcontrol-backend --region "${{ env.REGION }}" --project "${{ secrets.GCP_PROJECT_ID }}" --format="value(status.url)")
+          IMAGE=${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO }}/frontend:${{ github.sha }}
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+          docker build --build-arg REACT_APP_API_URL="$API/api" -t "$IMAGE" ./frontend
+          docker push "$IMAGE"
+
+      - name: Desplegar en Cloud Run
+        run: |
+          gcloud run deploy rhcontrol-frontend \
+            --image "$IMAGE" \
+            --region "${{ env.REGION }}" \
+            --project "${{ secrets.GCP_PROJECT_ID }}" \
+            --platform managed \
+            --port 80 \
+            --allow-unauthenticated \
+            --min-instances 0 \
+            --max-instances 2 \
+            --memory 256Mi
+
+      - name: Permitir el frontend en el CORS del backend
+        run: |
+          FRONT=$(gcloud run services describe rhcontrol-frontend --region "${{ env.REGION }}" --project "${{ secrets.GCP_PROJECT_ID }}" --format="value(status.url)")
+          gcloud run services update rhcontrol-backend \
+            --region "${{ env.REGION }}" \
+            --project "${{ secrets.GCP_PROJECT_ID }}" \
+            --update-env-vars "CORS_ORIGINS=$FRONT"
+          echo "Frontend: $FRONT"
+          curl --fail --retry 5 --retry-delay 5 -s -o /dev/null "$FRONT"
