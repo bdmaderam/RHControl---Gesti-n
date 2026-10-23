@@ -34,6 +34,7 @@ Usuario de demostración: `admin` / `admin123` (se crea al iniciar la API por pr
 - [Pruebas](#pruebas)
 - [Integración y despliegue continuo](#integración-y-despliegue-continuo)
 - [Despliegue en Google Cloud](#despliegue-en-google-cloud)
+- [Historias de usuario y sprints](#historias-de-usuario-y-sprints)
 - [Flujo de trabajo del equipo](#flujo-de-trabajo-del-equipo)
 - [Documentación adicional](#documentación-adicional)
 - [Autores](#autores)
@@ -216,6 +217,60 @@ gcloud sql instances delete rhcontrol-db
 gcloud artifacts repositories delete rhcontrol --location us-central1
 ```
 
+## Historias de usuario y sprints
+
+El trabajo se organizó en **12 historias de usuario** (47 puntos), repartidas en partes iguales: las **HU-A** son de Brayan y las **HU-B** de Daniel. Cada historia es un issue creado con la plantilla `.github/ISSUE_TEMPLATE/historia-de-usuario.md`, se trabaja en su propia rama `feature/...` y se cierra con un Pull Request que la referencia con `Closes #N`, con revisión cruzada. Cada sprint termina con un Pull Request de release de `development` a `production`.
+
+Tablero del proyecto: [GitHub Projects](https://github.com/bdmaderam/RHControl---Gesti-n/projects) · Métricas: [docs/metricas.md](docs/metricas.md) · Retrospectiva: [docs/retrospectiva.md](docs/retrospectiva.md)
+
+### Sprint 1: Backend y base de datos
+- **Historias completadas** (15 de 15 puntos):
+  - **HU-A1** — Proteger el API de empleados y anotaciones con JWT (5 pts, Brayan). Issue [#4](https://github.com/bdmaderam/RHControl---Gesti-n/issues/4), Pull Request [#15](https://github.com/bdmaderam/RHControl---Gesti-n/pull/15). Estado: Done.
+  - **HU-A2** — Configuración y secretos por variables de entorno (2 pts, Brayan). Issue [#5](https://github.com/bdmaderam/RHControl---Gesti-n/issues/5), Pull Request [#17](https://github.com/bdmaderam/RHControl---Gesti-n/pull/17). Estado: Done.
+  - **HU-B1** — Pruebas pytest del CRUD de empleados (5 pts, Daniel). Issue [#10](https://github.com/bdmaderam/RHControl---Gesti-n/issues/10), Pull Request [#16](https://github.com/bdmaderam/RHControl---Gesti-n/pull/16). Estado: Done.
+  - **HU-B2** — Workflow que mueve las cards del tablero (3 pts, Daniel). Issue [#2](https://github.com/bdmaderam/RHControl---Gesti-n/issues/2), Pull Request [#3](https://github.com/bdmaderam/RHControl---Gesti-n/pull/3). Estado: Done.
+- **Evidencias y enlaces:**
+  - Release del sprint: [Pull Request #18](https://github.com/bdmaderam/RHControl---Gesti-n/pull/18) (`development` → `production`).
+  - Plantillas de issue y de Pull Request: [PR #1](https://github.com/bdmaderam/RHControl---Gesti-n/pull/1).
+  - Pruebas del backend: 12 pruebas con pytest que se ejecutan en CI ([workflow `ci.yml`](https://github.com/bdmaderam/RHControl---Gesti-n/actions/workflows/ci.yml)).
+  - Automatización del tablero: [workflow `project-automation.yml`](https://github.com/bdmaderam/RHControl---Gesti-n/actions/workflows/project-automation.yml).
+  - Velocity: 15 puntos planificados y 15 completados ([detalle y burndown](docs/metricas.md)).
+  - Reglas de ramas (Pull Request con aprobación y checks obligatorios): ![Reglas de las ramas](docs/evidencias/06-ruleset.png)
+
+### Sprint 2: Frontend
+- **Historias completadas** (11 de 11 puntos):
+  - **HU-A3** — Enviar el token en Authorization y cerrar sesión con 401 (3 pts, Brayan). Issue [#6](https://github.com/bdmaderam/RHControl---Gesti-n/issues/6), Pull Request [#19](https://github.com/bdmaderam/RHControl---Gesti-n/pull/19). Estado: Done.
+  - **HU-A4** — GET de anotación por id y uso en EditNote (2 pts, Brayan). Issue [#7](https://github.com/bdmaderam/RHControl---Gesti-n/issues/7), Pull Request [#20](https://github.com/bdmaderam/RHControl---Gesti-n/pull/20). Estado: Done.
+  - **HU-B3** — Estados de carga, vacíos y errores claros en formularios (3 pts, Daniel). Issue [#11](https://github.com/bdmaderam/RHControl---Gesti-n/issues/11), Pull Request [#21](https://github.com/bdmaderam/RHControl---Gesti-n/pull/21). Estado: Done.
+  - **HU-B4** — Pruebas del frontend con Testing Library (3 pts, Daniel). Issue [#12](https://github.com/bdmaderam/RHControl---Gesti-n/issues/12), Pull Request [#22](https://github.com/bdmaderam/RHControl---Gesti-n/pull/22). Estado: Done.
+- **Evidencias y enlaces:**
+  - Release del sprint: [Pull Request #23](https://github.com/bdmaderam/RHControl---Gesti-n/pull/23) (`development` → `production`).
+  - Pruebas del frontend: 6 pruebas con Jest y Testing Library en CI.
+  - Pull Requests fusionados con revisión cruzada: ![Pull Requests cerrados](docs/evidencias/03-prs-cerrados.png)
+  - Velocity: 11 puntos planificados y 11 completados ([detalle y burndown](docs/metricas.md)).
+
+### Sprint 3: Despliegue y documentación
+- **Historias completadas** (21 de 21 puntos):
+  - **HU-A5** — Desplegar backend y base de datos en GCP (8 pts, Brayan). Issue [#8](https://github.com/bdmaderam/RHControl---Gesti-n/issues/8), Pull Request [#25](https://github.com/bdmaderam/RHControl---Gesti-n/pull/25). Estado: Done.
+  - **HU-A6** — Desplegar frontend y despliegue continuo con Actions (5 pts, Brayan). Issue [#9](https://github.com/bdmaderam/RHControl---Gesti-n/issues/9), Pull Request [#27](https://github.com/bdmaderam/RHControl---Gesti-n/pull/27). Estado: Done.
+  - **HU-B5** — CI en cada Pull Request con pruebas y build (5 pts, Daniel). Issue [#13](https://github.com/bdmaderam/RHControl---Gesti-n/issues/13), Pull Request [#24](https://github.com/bdmaderam/RHControl---Gesti-n/pull/24). Estado: Done.
+  - **HU-B6** — README final, documentación de la API y retrospectiva (3 pts, Daniel). Issue [#14](https://github.com/bdmaderam/RHControl---Gesti-n/issues/14), Pull Request [#29](https://github.com/bdmaderam/RHControl---Gesti-n/pull/29). Estado: Done.
+- **Evidencias y enlaces:**
+  - Releases a producción: [PR #26](https://github.com/bdmaderam/RHControl---Gesti-n/pull/26), [PR #28](https://github.com/bdmaderam/RHControl---Gesti-n/pull/28), [PR #30](https://github.com/bdmaderam/RHControl---Gesti-n/pull/30) y [PR #33](https://github.com/bdmaderam/RHControl---Gesti-n/pull/33).
+  - Despliegue continuo: [workflow `deploy.yml`](https://github.com/bdmaderam/RHControl---Gesti-n/actions/workflows/deploy.yml) y CI en [`ci.yml`](https://github.com/bdmaderam/RHControl---Gesti-n/actions/workflows/ci.yml): ![Workflows de GitHub Actions en verde](docs/evidencias/05-actions-verde.png)
+  - Aplicación en producción: [frontend](https://rhcontrol-frontend-3cugxgrrsa-uc.a.run.app) y [API con Swagger](https://rhcontrol-backend-3cugxgrrsa-uc.a.run.app/docs).
+    - ![Frontend en producción](docs/evidencias/07-app-produccion.png)
+    - ![Swagger de la API](docs/evidencias/08-swagger.png)
+  - Recursos en Google Cloud: ![Cloud Run](docs/evidencias/09-gcp-cloud-run.png) ![Cloud SQL](docs/evidencias/10-gcp-cloud-sql.png)
+  - Conflicto de merge provocado y resuelto: [PR #31](https://github.com/bdmaderam/RHControl---Gesti-n/pull/31) y [PR #32](https://github.com/bdmaderam/RHControl---Gesti-n/pull/32) (ambos modifican la misma línea de la licencia del README): ![Conflicto de merge en el PR #32](docs/evidencias/11-conflicto-pr.png)
+  - Documentación: [API](docs/api-documentation.md), [métricas](docs/metricas.md) y [retrospectiva](docs/retrospectiva.md).
+  - Velocity: 21 puntos planificados y 21 completados.
+
+### Evidencias del tablero y del equipo
+- Tablero con las 12 historias en Done: ![Tablero Kanban](docs/evidencias/01-tablero-board.png)
+- Vista de tabla con Sprint, Prioridad, Tipo y Estimación: ![Tablero en tabla](docs/evidencias/02-tablero-tabla.png)
+- Participación de los dos integrantes: ![Contribuidores](docs/evidencias/04-contribuidores.png)
+
 ## Flujo de trabajo del equipo
 
 - **Tablero Kanban** en GitHub Projects con las columnas Backlog → Ready → In Progress → Review → Done, y los campos personalizados Sprint, Prioridad, Tipo y Estimación (puntos).
@@ -237,5 +292,3 @@ gcloud artifacts repositories delete rhcontrol --location us-central1
 - **Brayan Madera** — [@bdmaderam](https://github.com/bdmaderam)
 
 ## Licencia
-
-Este proyecto se distribuye bajo la licencia **ISC**, es de uso academico y se desarrolla para la materia Desarrollo de Aplicaciones en la Nube.
