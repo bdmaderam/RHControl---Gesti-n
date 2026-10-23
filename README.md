@@ -292,5 +292,3 @@ Tablero del proyecto: [GitHub Projects](https://github.com/bdmaderam/RHControl--
 - **Brayan Madera** — [@bdmaderam](https://github.com/bdmaderam)
 
 ## Licencia
-
-Este proyecto se distribuye bajo la licencia **ISC**, es de uso academico y se desarrolla para la materia Desarrollo de Aplicaciones en la Nube.
