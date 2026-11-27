@@ -1,0 +1,18 @@
+# Despliegue de toda la aplicación:  kubectl apply -k k8s/
+# (El namespace y el Secret se aplican antes; ver README.)
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - configmap.yaml
+  - postgres.yaml
+  - backend.yaml
+  - frontend.yaml
+  - ingress.yaml
+  - hpa.yaml
+# Para usar otras imágenes (por ejemplo, locales con kind/minikube) sin editar los manifiestos:
+#   cd k8s && kustomize edit set image ghcr.io/bdmaderam/rhcontrol-backend=rhcontrol-backend:local
+images:
+  - name: ghcr.io/bdmaderam/rhcontrol-backend
+    newTag: latest
+  - name: ghcr.io/bdmaderam/rhcontrol-frontend
+    newTag: latest

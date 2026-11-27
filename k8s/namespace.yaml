@@ -1,0 +1,5 @@
+# Namespace donde vive toda la aplicación. Se aplica primero (ver README, sección Kubernetes).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rhcontrol

@@ -1,0 +1,76 @@
+name: Imágenes y manifiestos
+
+# Construye las imágenes de Kubernetes y las publica en GitHub Container Registry (ghcr.io).
+# Las imágenes quedan en: ghcr.io/<usuario>/rhcontrol-backend y ghcr.io/<usuario>/rhcontrol-frontend
+# (Primera vez: en GitHub > Packages, cambiar la visibilidad a "Public" para que el clúster las descargue sin credenciales.)
+on:
+  push:
+    branches: [development, production]
+    paths: ["backend/**", "frontend/**", "k8s/**", ".github/workflows/imagenes.yml"]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  validar-manifiestos:
+    name: Validar manifiestos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Renderizar con kustomize (falla si hay un YAML o una referencia inválida)
+        run: |
+          kubectl kustomize k8s/ > /dev/null
+          kubectl kustomize k8s/monitoring/ > /dev/null
+
+  publicar:
+    name: Construir y publicar ${{ matrix.componente }}
+    needs: validar-manifiestos
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        componente: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: nombre
+        # El nombre de la imagen debe ir en minúsculas.
+        run: echo "imagen=${{ env.REGISTRY }}/${GITHUB_REPOSITORY_OWNER,,}/rhcontrol-${{ matrix.componente }}" >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.componente }}
+          push: true
+          # La imagen del frontend usa /api: en Kubernetes el Ingress enruta /api hacia el backend.
+          build-args: ${{ matrix.componente == 'frontend' && 'REACT_APP_API_URL=/api' || '' }}
+          tags: |
+            ${{ steps.nombre.outputs.imagen }}:latest
+            ${{ steps.nombre.outputs.imagen }}:${{ github.sha }}
+
+  # (Opcional) Despliegue automático en un clúster accesible desde GitHub Actions (GKE, EKS, AKS...).
+  # Se activa solo si existe el secreto KUBE_CONFIG; con Minikube/kind local se omite.
+  desplegar:
+    name: Desplegar en el clúster
+    needs: publicar
+    if: github.ref == 'refs/heads/production' && vars.DEPLOY_K8S == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configurar acceso al clúster
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+      - name: Aplicar manifiestos y esperar el rollout
+        run: |
+          kubectl apply -k k8s/
+          kubectl -n rhcontrol set image deployment/backend backend=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/rhcontrol-backend:${{ github.sha }}
+          kubectl -n rhcontrol set image deployment/frontend frontend=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/rhcontrol-frontend:${{ github.sha }}
+          kubectl -n rhcontrol rollout status deployment/backend --timeout=180s
+          kubectl -n rhcontrol rollout status deployment/frontend --timeout=180s

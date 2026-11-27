@@ -1,0 +1,13 @@
+groups:
+  - name: rhcontrol-api
+    rules:
+      - alert: RHControlAPICaida
+        expr: up{job="rhcontrol-backend"} == 0
+        for: 30s
+        labels: {severity: critical}
+        annotations: {summary: "La API no responde al scraping"}
+      - alert: RHControlErroresAltos
+        expr: sum(rate(http_requests_total{status=~"5.."}[1m])) / sum(rate(http_requests_total[1m])) > 0.2
+        for: 1m
+        labels: {severity: warning}
+        annotations: {summary: "Más del 20 % de las respuestas son errores 5xx"}
