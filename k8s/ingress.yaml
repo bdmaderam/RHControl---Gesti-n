@@ -1,0 +1,21 @@
+# (Opcional) Ingress: una sola entrada para frontend y API.
+# Requiere un controlador de Ingress (ingress-nginx). /metrics NO se enruta: solo es accesible dentro del clúster.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rhcontrol
+  namespace: rhcontrol
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: rhcontrol.local
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service: {name: backend, port: {name: http}}
+          - path: /
+            pathType: Prefix
+            backend:
+              service: {name: frontend, port: {name: http}}

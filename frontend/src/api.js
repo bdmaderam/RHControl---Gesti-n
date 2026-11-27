@@ -17,6 +17,7 @@ export const api={
  login:(data)=>request('/auth/login',{method:'POST',body:JSON.stringify(data)}),
  empleados:{list:(params='')=>request(`/empleados${params}`),get:(id)=>request(`/empleados/${id}`),create:(data)=>request('/empleados',{method:'POST',body:JSON.stringify(data)}),update:(id,data)=>request(`/empleados/${id}`,{method:'PUT',body:JSON.stringify(data)}),remove:(id)=>request(`/empleados/${id}`,{method:'DELETE'})},
  anotaciones:{list:()=>request('/anotaciones'),get:(id)=>request(`/anotaciones/${id}`),byEmpleado:(id)=>request(`/anotaciones/empleado/${id}`),create:(id,data)=>request(`/anotaciones/empleado/${id}`,{method:'POST',body:JSON.stringify(data)}),update:(id,data)=>request(`/anotaciones/${id}`,{method:'PUT',body:JSON.stringify(data)}),remove:(id)=>request(`/anotaciones/${id}`,{method:'DELETE'})},
+ ia:{revisar:(datos)=>request('/ia/revisar-anotacion',{method:'POST',body:JSON.stringify(datos)}),temasEmpleado:(id)=>request(`/ia/temas-empleado/${id}`),reincidencias:()=>request('/ia/reincidencias')},
  salud:()=>request('/salud')
 };
 export {API_URL};

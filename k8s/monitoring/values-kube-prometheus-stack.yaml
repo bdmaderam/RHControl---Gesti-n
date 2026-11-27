@@ -1,0 +1,20 @@
+# Valores para:  helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack -n monitoring -f este-archivo
+prometheus:
+  prometheusSpec:
+    # Descubrir ServiceMonitor/PrometheusRule de cualquier namespace (el nuestro está en "rhcontrol").
+    serviceMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    retention: 2d
+grafana:
+  admin:
+    existingSecret: grafana-admin      # se crea con scripts/k8s-crear-secret.sh (no hay contraseña en el repo)
+    userKey: admin-user
+    passwordKey: admin-password
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      searchNamespace: ALL             # busca el dashboard en el namespace "rhcontrol"
+# Para una demo local no se necesitan estos componentes (ahorran memoria):
+alertmanager:
+  enabled: false

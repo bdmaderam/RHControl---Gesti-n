@@ -4,3 +4,6 @@ SQLAlchemy==2.0.36
 psycopg[binary]==3.2.3
 pydantic-settings==2.7.1
 PyJWT==2.10.1
+
+# Proyecto 3: monitoreo e IA
+prometheus-client==0.26.0

@@ -200,3 +200,18 @@ h1,h2{font-family:var(--serif);font-weight:600;letter-spacing:0}
   .table-wrap{overflow:auto}
   .table-wrap table{min-width:800px}
 }
+
+/* Sugerencia de tipo con IA (formulario de anotaciones) */
+.ia-box{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.ia-result{display:flex;flex-direction:column;gap:6px;width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;background:#eef6ff;border:1px solid #cfe0f5;font-size:.9rem}
+.ia-result.ok{background:#ecfdf3;border-color:#abefc6}.ia-result.warn{background:#fffaeb;border-color:#fedf89}.ia-result.bad{background:#fef3f2;border-color:#fecdca}
+.ia-head{display:flex;gap:10px;align-items:center}.ia-score{font-size:1.3rem;font-weight:700}.ia-resumen{margin:0}
+.ia-hallazgos{margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:8px}.ia-hallazgos li{display:flex;flex-direction:column;gap:2px}.ia-evidencia{color:#667085}
+.ia-error{color:#b42318}
+
+.ia-alerta{padding:8px 10px;border-radius:8px;background:#fff4e5;border:1px solid #f9c97c;color:#7a4100;font-size:.9rem}
+.ia-alerta small{display:block;color:#9a5b13}
+.ia-temas{display:flex;flex-wrap:wrap;gap:6px}
+.tema{padding:2px 10px;border-radius:999px;font-size:.8rem;border:1px solid #d0d5dd;background:#f2f4f7;color:#344054}
+.tema.negativo{background:#fef3f2;border-color:#fecdca;color:#b42318}.tema.positivo{background:#ecfdf3;border-color:#abefc6;color:#067647}
+.temas-card{margin-bottom:16px;display:flex;flex-direction:column;gap:10px}
