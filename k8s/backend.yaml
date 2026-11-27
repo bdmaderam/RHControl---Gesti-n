@@ -1,0 +1,63 @@
+# API (FastAPI): Deployment con 2 réplicas + Service.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: rhcontrol
+  labels: {app: backend}
+spec:
+  replicas: 2                       # requisito: al menos 2 réplicas (el HPA puede subirlas)
+  selector:
+    matchLabels: {app: backend}
+  template:
+    metadata:
+      labels: {app: backend}
+    spec:
+      containers:
+        - name: backend
+          image: ghcr.io/bdmaderam/rhcontrol-backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - {name: http, containerPort: 8000}
+          envFrom:
+            - configMapRef: {name: rhcontrol-config}     # CORS_ORIGINS, ...
+          env:
+            # Credenciales: siempre desde el Secret.
+            - name: DATABASE_URL
+              valueFrom: {secretKeyRef: {name: rhcontrol-secret, key: DATABASE_URL}}
+            - name: JWT_SECRET
+              valueFrom: {secretKeyRef: {name: rhcontrol-secret, key: JWT_SECRET}}
+            - name: ADMIN_PASSWORD
+              valueFrom: {secretKeyRef: {name: rhcontrol-secret, key: ADMIN_PASSWORD}}
+          # Liveness: ¿el proceso responde? Si falla, Kubernetes reinicia el contenedor.
+          livenessProbe:
+            httpGet: {path: /api/salud, port: http}
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          # Readiness: ¿puede atender tráfico (la base responde)? Si falla, sale del Service sin reiniciarse.
+          readinessProbe:
+            httpGet: {path: /api/listo, port: http}
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          # requests = lo que se reserva; limits = el tope. El HPA calcula el % de CPU sobre "requests".
+          resources:
+            requests: {cpu: 100m, memory: 192Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: rhcontrol
+  labels: {app: backend}          # el ServiceMonitor de Prometheus selecciona por esta etiqueta
+spec:
+  type: ClusterIP
+  selector: {app: backend}
+  ports:
+    - name: http                  # el ServiceMonitor referencia este nombre de puerto
+      port: 8000
+      targetPort: http

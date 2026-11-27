@@ -1,0 +1,24 @@
+# (Opcional) HorizontalPodAutoscaler: sube/baja réplicas de la API según el uso de CPU.
+# Requiere metrics-server. Se demuestra con: python scripts/generate-traffic.py --hilos 40 ...
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: backend
+  namespace: rhcontrol
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: backend
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50      # 50 % de lo solicitado (requests.cpu = 100m -> 50m)
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 60  # baja rápido para que se vea en la demostración (por defecto 300 s)

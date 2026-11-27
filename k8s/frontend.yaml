@@ -1,0 +1,44 @@
+# Frontend (React + nginx): Deployment + Service.
+# La imagen se construye con REACT_APP_API_URL=/api: el navegador llama a la misma URL y el Ingress enruta /api al backend.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: rhcontrol
+  labels: {app: frontend}
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: frontend}
+  template:
+    metadata:
+      labels: {app: frontend}
+    spec:
+      containers:
+        - name: frontend
+          image: ghcr.io/bdmaderam/rhcontrol-frontend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - {name: http, containerPort: 80}
+          readinessProbe:
+            httpGet: {path: /, port: http}
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /, port: http}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests: {cpu: 25m, memory: 32Mi}
+            limits: {cpu: 200m, memory: 128Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: rhcontrol
+  labels: {app: frontend}
+spec:
+  type: ClusterIP
+  selector: {app: frontend}
+  ports:
+    - {name: http, port: 80, targetPort: http}

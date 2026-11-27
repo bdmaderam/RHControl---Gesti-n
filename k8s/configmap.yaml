@@ -1,0 +1,10 @@
+# Configuración NO sensible. Las credenciales están en el Secret "rhcontrol-secret".
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rhcontrol-config
+  namespace: rhcontrol
+data:
+  # Orígenes permitidos por CORS (con Ingress, frontend y API comparten origen).
+  CORS_ORIGINS: "http://rhcontrol.local,http://localhost,http://localhost:3000"
+  POSTGRES_DB: rhcontrol

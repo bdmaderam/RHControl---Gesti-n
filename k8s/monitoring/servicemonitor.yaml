@@ -1,0 +1,17 @@
+# Le dice a Prometheus (kube-prometheus-stack) que lea /metrics de cada pod de la API cada 15 s.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: backend
+  namespace: rhcontrol
+  labels:
+    release: kube-prometheus-stack     # el nombre del release de Helm: así Prometheus lo descubre
+spec:
+  selector:
+    matchLabels: {app: backend}        # el Service "backend"
+  namespaceSelector:
+    matchNames: [rhcontrol]
+  endpoints:
+    - port: http                       # nombre del puerto del Service
+      path: /metrics
+      interval: 15s

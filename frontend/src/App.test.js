@@ -90,3 +90,68 @@ describe('Listado de empleados', () => {
     await waitFor(() => expect(screen.getByText(/No se pudo conectar con el servidor/i)).toBeInTheDocument());
   });
 });
+describe('Revisor de calidad de anotaciones', () => {
+  test('revisa la anotación y muestra puntaje, problemas y sugerencias', async () => {
+    localStorage.setItem('token', 'token-de-prueba');
+    window.history.pushState({}, '', '/empleados/1/anotaciones/nueva');
+    api.empleados.get.mockResolvedValue(empleadosDePrueba[0]);
+    api.ia = {revisar: jest.fn().mockResolvedValue({
+      puntaje: 56, nivel: 'requiere_correccion', etiqueta: 'Requiere corrección', resumen: 'Se encontraron 1 error(es).',
+      hallazgos: [{regla: 'L01', categoria: 'Lenguaje', severidad: 'error', mensaje: 'El texto contiene lenguaje ofensivo.',
+        sugerencia: 'Elimina los insultos.', evidencia: ['imbecil']}],
+      cumplidas: ['Es legible'], reglas_evaluadas: 10, contexto: {}})};
+    render(<App />);
+
+    const descripcion = await screen.findByLabelText(/descripción/i);
+    fireEvent.change(descripcion, {target: {value: 'Es un imbécil'}});
+    fireEvent.click(screen.getByRole('button', {name: /revisar calidad/i}));
+
+    expect(await screen.findByText('56/100')).toBeInTheDocument();
+    expect(screen.getByText(/lenguaje ofensivo/i)).toBeInTheDocument();
+    expect(screen.getByText(/elimina los insultos/i)).toBeInTheDocument();
+    expect(api.ia.revisar).toHaveBeenCalledWith(expect.objectContaining({descripcion: 'Es un imbécil', tipo: 'Llamado de atención', empleado_id: 1}));
+  });
+
+  test('muestra el error si la revisión falla', async () => {
+    localStorage.setItem('token', 'token-de-prueba');
+    window.history.pushState({}, '', '/empleados/1/anotaciones/nueva');
+    api.empleados.get.mockResolvedValue(empleadosDePrueba[0]);
+    api.ia = {revisar: jest.fn().mockRejectedValue(new Error('Servicio no disponible'))};
+    render(<App />);
+    fireEvent.change(await screen.findByLabelText(/descripción/i), {target: {value: 'Texto de prueba'}});
+    fireEvent.click(screen.getByRole('button', {name: /revisar calidad/i}));
+    expect(await screen.findByText(/servicio no disponible/i)).toBeInTheDocument();
+  });
+});
+
+describe('Temas y reincidencia', () => {
+  test('el panel de revisión muestra los temas y la alerta de reincidencia', async () => {
+    localStorage.setItem('token', 'token-de-prueba');
+    window.history.pushState({}, '', '/empleados/1/anotaciones/nueva');
+    api.empleados.get.mockResolvedValue(empleadosDePrueba[0]);
+    api.ia = {revisar: jest.fn().mockResolvedValue({
+      puntaje: 80, nivel: 'mejorable', etiqueta: 'Mejorable', resumen: 'x', hallazgos: [], cumplidas: [],
+      temas: [{tema: 'puntualidad', nombre: 'Puntualidad', tono: 'negativo', evidencia: ['llego tarde']}],
+      reincidencias: [{tema: 'puntualidad', nombre: 'Puntualidad', ocurrencias: 2, nivel: 'se_repite',
+        mensaje: "'Puntualidad' aparece por 2.ª vez en los últimos 90 días.", fechas_previas: ['2026-11-10']}]})};
+    render(<App />);
+    fireEvent.change(await screen.findByLabelText(/descripción/i), {target: {value: 'Llegó tarde'}});
+    fireEvent.click(screen.getByRole('button', {name: /revisar calidad/i}));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/2\.ª vez/);
+    expect(screen.getByTitle(/llego tarde/i)).toHaveTextContent('Puntualidad');
+  });
+
+  test('el detalle del empleado muestra los temas repetidos', async () => {
+    localStorage.setItem('token', 'token-de-prueba');
+    window.history.pushState({}, '', '/empleados/1');
+    api.empleados.get.mockResolvedValue(empleadosDePrueba[0]);
+    api.anotaciones.byEmpleado.mockResolvedValue([]);
+    api.ia = {temasEmpleado: jest.fn().mockResolvedValue({
+      ventana_dias: 90, anotaciones: 2,
+      temas: [{tema: 'puntualidad', nombre: 'Puntualidad', negativas: 2, positivas: 0, neutras: 0}],
+      alertas: [{tema: 'puntualidad', nombre: 'Puntualidad', ocurrencias: 2, nivel: 'se_repite'}]})};
+    render(<App />);
+    expect(await screen.findByText(/temas y reincidencia/i)).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(/2 anotaciones negativas/);
+  });
+});

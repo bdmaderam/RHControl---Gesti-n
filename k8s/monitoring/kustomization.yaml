@@ -1,0 +1,16 @@
+# Recursos de monitoreo de RHControl para kube-prometheus-stack:  kubectl apply -k k8s/monitoring/
+# Aplicar DESPUÉS de instalar el chart de Helm (crea los CRD ServiceMonitor y PrometheusRule).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: rhcontrol
+resources:
+  - servicemonitor.yaml
+  - prometheusrule.yaml
+configMapGenerator:
+  - name: grafana-dashboard-rhcontrol
+    files:
+      - dashboards/rhcontrol.json
+    options:
+      disableNameSuffixHash: true
+      labels:
+        grafana_dashboard: "1"         # el sidecar de Grafana carga automáticamente los ConfigMap con esta etiqueta
