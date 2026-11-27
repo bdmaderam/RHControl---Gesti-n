@@ -46,7 +46,7 @@ jobs:
             --service-account "rhcontrol-run@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com" \
             --add-cloudsql-instances "${{ secrets.CLOUDSQL_CONNECTION }}" \
             --set-secrets "DATABASE_URL=database-url:latest,JWT_SECRET=jwt-secret:latest" \
-            --update-env-vars "CORS_ORIGINS=$FRONT" \
+            --update-env-vars "CORS_ORIGINS=$FRONT,ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}" \
             --allow-unauthenticated \
             --min-instances 0 \
             --max-instances 2 \
